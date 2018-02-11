@@ -12,44 +12,27 @@ import games.strategy.engine.data.Unit;
  * Interface to ensure different implementations of the odds calculator all have the same public methods.
  */
 public interface IOddsCalculator {
-  void setGameData(final GameData data);
+  void setGameData(GameData data);
 
-  void setCalculateData(final PlayerID attacker, final PlayerID defender, final Territory location,
-      final Collection<Unit> attacking, final Collection<Unit> defending, final Collection<Unit> bombarding,
-      final Collection<TerritoryEffect> territoryEffects, final int runCount);
+  AggregateResults setCalculateDataAndCalculate(PlayerID attacker, PlayerID defender, Territory location,
+      Collection<Unit> attacking, Collection<Unit> defending, Collection<Unit> bombarding,
+      Collection<TerritoryEffect> territoryEffects, int runCount);
 
-  AggregateResults calculate();
+  void setKeepOneAttackingLandUnit(boolean bool);
 
-  AggregateResults setCalculateDataAndCalculate(final PlayerID attacker, final PlayerID defender,
-      final Territory location, final Collection<Unit> attacking, final Collection<Unit> defending,
-      final Collection<Unit> bombarding, final Collection<TerritoryEffect> territoryEffects, final int runCount);
+  void setAmphibious(boolean bool);
 
-  int getRunCount();
+  void setRetreatAfterRound(int value);
 
-  boolean getIsReady();
+  void setRetreatAfterXUnitsLeft(int value);
 
-  void setKeepOneAttackingLandUnit(final boolean bool);
+  void setRetreatWhenOnlyAirLeft(boolean value);
 
-  void setAmphibious(final boolean bool);
+  void setAttackerOrderOfLosses(String attackerOrderOfLosses);
 
-  void setRetreatAfterRound(final int value);
-
-  void setRetreatAfterXUnitsLeft(final int value);
-
-  void setRetreatWhenOnlyAirLeft(final boolean value);
-
-  void setAttackerOrderOfLosses(final String attackerOrderOfLosses);
-
-  void setDefenderOrderOfLosses(final String defenderOrderOfLosses);
+  void setDefenderOrderOfLosses(String defenderOrderOfLosses);
 
   void cancel();
 
   void shutdown();
-
-  int getThreadCount();
-
-  void addOddsCalculatorListener(final OddsCalculatorListener listener);
-
-  // TODO: this method appears to never used.
-  void removeOddsCalculatorListener(final OddsCalculatorListener listener);
 }

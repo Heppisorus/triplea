@@ -10,11 +10,8 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Window;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -99,7 +96,7 @@ class OddsCalculatorPanel extends JPanel {
   private final IntTextField retreatAfterXRounds = new IntTextField();
   private final IntTextField retreatAfterXUnitsLeft = new IntTextField();
   private final JPanel resultsPanel = new JPanel();
-  private final JButton calculateButton = new JButton("Pls Wait, Copying Data...");
+  private final JButton calculateButton = new JButton("Calculate Odds");
   private final JButton clearButton = new JButton("Clear");
   private final JButton closeButton = new JButton("Close");
   private final JButton swapSidesButton = new JButton("Swap Sides");
@@ -136,7 +133,6 @@ class OddsCalculatorPanel extends JPanel {
     this.uiContext = uiContext;
     this.location = location;
     this.parent = parent;
-    calculateButton.setEnabled(false);
     createComponents();
     layoutComponents();
     setupListeners();
@@ -172,19 +168,7 @@ class OddsCalculatorPanel extends JPanel {
       updateDefender(null);
       updateAttacker(null);
     }
-    if (OddsCalculatorPanel.percentageOfFreeMemoryAvailable() < 0.4) {
-      System.gc();
-      System.runFinalization();
-      System.gc();
-    }
-    calculator = new ConcurrentOddsCalculator("BtlCalc Panel");
-
-    calculator.addOddsCalculatorListener(() -> {
-      calculateButton.setText("Calculate Odds");
-      calculateButton.setEnabled(true);
-    });
-
-    calculator.setGameData(data);
+    calculator = new OddsCalculator(data);
     setWidgetActivation();
     revalidate();
   }
@@ -197,19 +181,6 @@ class OddsCalculatorPanel extends JPanel {
     } catch (final Exception e) {
       ClientLogger.logQuietly("Failed to shut down odds calculator", e);
     }
-  }
-
-  private static double percentageOfFreeMemoryAvailable() {
-    final Runtime runtime = Runtime.getRuntime();
-    final long maxMemory = runtime.maxMemory();
-    final long memoryAvailable = Math.min(maxMemory, maxMemory - (runtime.totalMemory() - runtime.freeMemory()));
-    return (((double) memoryAvailable) / ((double) maxMemory));
-  }
-
-  private static long freeMemoryAvailable() {
-    final Runtime runtime = Runtime.getRuntime();
-    final long maxMemory = runtime.maxMemory();
-    return Math.min(maxMemory, maxMemory - (runtime.totalMemory() - runtime.freeMemory()));
   }
 
   private PlayerID getDefender() {
@@ -256,25 +227,6 @@ class OddsCalculatorPanel extends JPanel {
       updateDefender(null);
       updateAttacker(null);
       setWidgetActivation();
-    });
-    calculateButton.addMouseMotionListener(new MouseMotionListener() {
-      @Override
-      public void mouseDragged(final MouseEvent e) {}
-
-      @Override
-      public void mouseMoved(final MouseEvent e) {
-        final String memoryAvailable = "<br/>Percentage of memory available: "
-            + String.format("%.2f", (percentageOfFreeMemoryAvailable() * 100)) + "% <br/>Free memory available: "
-            + (freeMemoryAvailable() / (1024 * 1024)) + "MB <br/>Maximum allowed memory: "
-            + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + "MB </html>";
-        if (calculateButton.isEnabled()) {
-          calculateButton.setToolTipText("<html>Data copying finished. " + memoryAvailable);
-        } else {
-          calculateButton.setToolTipText("<html>If this is taking forever to enable, it means "
-              + "<br/>you do not have enough memory to copy the data quickly! "
-              + "<br/>Consider increasing the max memory for TripleA. " + memoryAvailable);
-        }
-      }
     });
     calculateButton.addActionListener(e -> updateStats());
     closeButton.addActionListener(e -> {
@@ -354,7 +306,7 @@ class OddsCalculatorPanel extends JPanel {
     final AtomicReference<AggregateResults> results = new AtomicReference<>();
     final WaitDialog dialog = new WaitDialog(
         this,
-        "Calculating Odds (" + calculator.getThreadCount() + " threads)",
+        "Calculating Odds",
         calculator::cancel);
     final AtomicReference<Collection<Unit>> defenders = new AtomicReference<>();
     final AtomicReference<Collection<Unit>> attackers = new AtomicReference<>();
@@ -450,13 +402,11 @@ class OddsCalculatorPanel extends JPanel {
   }
 
   String formatPercentage(final double percentage) {
-    final NumberFormat format = new DecimalFormat("%");
-    return format.format(percentage);
+    return new DecimalFormat("#%").format(percentage);
   }
 
   String formatValue(final double value) {
-    final NumberFormat format = new DecimalFormat("#0.##");
-    return format.format(value);
+    return new DecimalFormat("#0.##").format(value);
   }
 
   private void updateDefender(List<Unit> units) {
